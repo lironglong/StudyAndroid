@@ -1,9 +1,12 @@
 apply plugin: 'com.android.application'
 
-def releaseTime() {
-    return new Date().format("yyyy-MM-dd", TimeZone.getTimeZone("UTC"))
+def getDate() {
+    def date = new Date()
+    def formattedDate = date.format('yyyy-MM-dd-HH-mm')
+    return formattedDate
 }
 
+def verCode = 14
 android {
     compileSdkVersion 25
     buildToolsVersion "25.0.0"
@@ -11,91 +14,88 @@ android {
         applicationId "com.lironglong.administrator.myapplication"
         minSdkVersion 19
         targetSdkVersion 25
-        versionCode 1
-        versionName "1.0"
-
-        // dex突破65535的限制
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
-        // 默认是umeng的渠道
-        manifestPlaceholders = [UMENG_CHANNEL_VALUE: "umeng"]
+        versionCode verCode
+        versionName APP_VERSION
     }
-
-    lintOptions {
-        abortOnError false
-    }
-
     signingConfigs {
-        debug {
-            // No debug config
-        }
+        signingConfig {
 
-        release {
-            storeFile file("D:/keystore/dianyou.jks")
+            //两个路径不一样:由于本地打包使用的是本机上的KeyStore,而Jenkins打包用的是服务器上的KeyStore
+            if ("true".equals(IS_JENKINS)) {
+                // storeFile file("服务器上KeyStore的路径")
+                //storeFile file("http://localhost:8088/keystore/dianyou.jks")
+                storeFile file("D:/keystore/dianyou.jks")
+            } else {
+                storeFile file("D:/keystore/dianyou.jks")
+            }
             storePassword "dianyou"
             keyAlias "dianyou"
             keyPassword "dianyou"
-            flavorDimensions "versionCode"
-        }
-    }
-
-    flavorDimensions "market"
-
-    productFlavors {
-        xiaomi {
-            dimension "market"
-            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "xiaomi"]
-        }
-        _360 {
-            dimension "market"
-            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "_360"]
-        }
-        baidu {
-            dimension "market"
-            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "baidu"]
-        }
-        wandoujia {
-            dimension "market"
-            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "wandoujia"]
         }
     }
 
     buildTypes {
         debug {
-            // 显示Log
-            buildConfigField "boolean", "LOG_DEBUG", "true"
 
-            versionNameSuffix "-debug"
-            minifyEnabled false
-            zipAlignEnabled false
-            shrinkResources false
-            signingConfig signingConfigs.debug
         }
 
         release {
             // 不显示Log
-            buildConfigField "boolean", "LOG_DEBUG", "false"
-
-            minifyEnabled false
-            zipAlignEnabled false
+            buildConfigField "boolean", "LOG_DEBUG", "true"
+            minifyEnabled true
+            zipAlignEnabled true
             // 移除无用的resource文件
-            shrinkResources false
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            signingConfig signingConfigs.release
-
-            applicationVariants.all { variant ->
-                variant.outputs.each { output ->
-                    def outputFile = output.outputFile
-                    if (outputFile != null && outputFile.name.endsWith('.apk')) {
-                        // 输出apk名称为boohee_v1.0_2015-01-15_wandoujia.apk
-                        def fileName = "demo_v${defaultConfig.versionName}_${releaseTime()}_${variant.productFlavors[0].name}.apk"
-                        output.outputFile = new File(outputFile.parent, fileName)
-                    }
-                }
-            }
+            signingConfig signingConfigs.signingConfig
+        }
+    }
+    dexOptions {
+        javaMaxHeapSize "2g"
+    }
+    //渠道Flavors
+    productFlavors {
+        wandoujia {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "wandoujia"]
+        }
+        xiaomi {
+            manifestPlaceholders = [UMENG_CHANNEL_VALUE: "xiaomi"]
         }
     }
 
-
+    //修改生成的apk名字及输出文件夹
+    applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            //新名字
+            def newName
+            //时间戳
+            def timeNow
+            //输出文件夹
+            def outDirectory
+            //是否为Jenkins打包，输出路径不同
+            if ("true".equals(IS_JENKINS)) {
+                //Jenkins打包输出到服务器路径
+                timeNow = BUILD_TIME
+                //BUILD_PATH为服务器输出路径
+                outDirectory = 'D:/dowmloadApk'
+                //AutoBuildTest-v1.0.1-xiaomi-release.apk
+                newName = 'AutoBuildTest-v' + APP_VERSION + '-' + variant.productFlavors[0].name + '-' + variant.buildType.name + '.apk'
+            } else {
+                //本机打包输出在本机路径
+                timeNow = getDate()
+                outDirectory = output.outputFile.getParent()
+                if ('debug'.equals(variant.buildType.name)) {
+                    newName = "AutoBuildTest-v${APP_VERSION}_debug.apk"
+                } else {
+                    //AutoBuildTest-v1.0.1-xiaomi-release.apk
+                    newName = 'AutoBuildTest-v' + APP_VERSION + '-' + variant.productFlavors[0].name + '-' + variant.buildType.name + '.apk'
+                }
+            }
+            output.outputFile = new File(outDirectory+'/'+timeNow, newName)
+        }
+    }
 }
 
 dependencies {
