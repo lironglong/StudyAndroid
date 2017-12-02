@@ -4,7 +4,7 @@ apply plugin: 'findbugs'
 task findbugs(type: FindBugs,dependsOn:"connectedAndroidTest") {//
     ignoreFailures = true
     effort = "default"
-    reportLevel = "medium"clean
+    reportLevel = "medium"
     //这里填写项目classes目录
     classes = files("${project.rootDir}/app/build/intermediates/classes")
     source = fileTree('src/main/java')
