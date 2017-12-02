@@ -79,7 +79,7 @@ android {
                 //Jenkins打包输出到服务器路径
                 timeNow = BUILD_TIME
                 //BUILD_PATH为服务器输出路径
-                 outDirectory = 'C:/Program Files (x86)/Jenkins/workspace/dowmloadApk'
+                 outDirectory = 'C:/Program Files (x86)/Jenkins/workspace/downloadApk'
 
                 //AutoBuildTest-v1.0.1-xiaomi-release.apk
                // newName = 'AutoBuildTest-v' + APP_VERSION + '-' + variant.productFlavors[0].name + '-' + variant.buildType.name + '.apk'
