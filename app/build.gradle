@@ -51,9 +51,9 @@ android {
             if ("true".equals(IS_JENKINS)) {
                 // storeFile file("服务器上KeyStore的路径")
                 //storeFile file("http://localhost:8088/keystore/dianyou.jks")
-                storeFile file("D:/keystore/dianyou.jks")
+                storeFile file("D:/keystore/dianyou.keystore")
             } else {
-                storeFile file("D:/keystore/dianyou.jks")
+                storeFile file("D:/keystore/dianyou.keystore")
             }
             storePassword "dianyou"
             keyAlias "dianyou"
